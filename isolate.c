@@ -69,7 +69,7 @@ static int extra_timeout;
 int pass_environ;
 int verbose;
 static int silent;
-static int fsize_limit;
+static int fsize_limit = -1;
 static int memory_limit;
 static int stack_limit;
 int block_quota;
@@ -653,7 +653,7 @@ setup_rlimits(void)
   if (memory_limit)
     RLIM(AS, (rlim_t)memory_limit * 1024);
 
-  if (fsize_limit)
+  if (fsize_limit >= 0)
     RLIM(FSIZE, (rlim_t)fsize_limit * 1024);
 
   RLIM(STACK, (stack_limit ? (rlim_t)stack_limit * 1024 : RLIM_INFINITY));
