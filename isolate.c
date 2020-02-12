@@ -300,8 +300,8 @@ static const struct signal_rule signal_rules[] = {
   { SIGSEGV,	SIGNAL_FATAL },
   { SIGPIPE,	SIGNAL_IGNORE },
   { SIGTERM,	SIGNAL_INTERRUPT },
-  { SIGUSR1,	SIGNAL_IGNORE },
-  { SIGUSR2,	SIGNAL_IGNORE },
+  { SIGUSR1,	SIGNAL_INTERRUPT },
+  { SIGUSR2,	SIGNAL_INTERRUPT },
   { SIGBUS,	SIGNAL_FATAL },
   { SIGTTOU,	SIGNAL_IGNORE },
 };
@@ -488,14 +488,33 @@ box_keeper(void)
 
   for(;;)
     {
+      int signal;
       struct rusage rus;
       int stat;
       pid_t p;
       if (interrupt)
-	{
-	  meta_printf("exitsig:%d\n", interrupt);
-	  err("SG: Interrupted");
-	}
+	switch (interrupt)
+	  {
+	  case SIGUSR1:
+	  case SIGUSR2:
+	    signal = (interrupt == SIGUSR1 ? SIGSTOP : SIGCONT);
+	    if (box_pid > 0)
+	      {
+		kill(-box_pid, signal);
+		kill(box_pid, signal);
+	      }
+	    if (proxy_pid > 0)
+	      {
+		kill(-proxy_pid, signal);
+		kill(proxy_pid, signal);
+	      }
+	    interrupt = 0;
+	    break;
+
+	  default:
+	    meta_printf("exitsig:%d\n", interrupt);
+	    err("SG: Interrupted");
+	  }
       if (timer_tick)
 	{
 	  check_timeout();
