@@ -122,7 +122,17 @@ close_all_fds(void)
 
   DIR *dir = opendir("/proc/self/fd");
   if (!dir)
-    die("Cannot open /proc/self/fd: %m");
+    {
+      msg("Cannot open /proc/self/fd: %m\n");
+
+      int max_fd = sysconf(_SC_OPEN_MAX);
+      for (int fd = 3; fd < max_fd; fd++)
+        if (fd != fd_to_keep)
+          close(fd);
+
+      return;
+    }
+
   int dir_fd = dirfd(dir);
 
   struct dirent *e;
